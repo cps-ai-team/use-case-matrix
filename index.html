@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Use Case Portfolio Matrix</title>
+<meta name="description" content="AI use case portfolio matrix — impact vs complexity, with delivery sequencing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --s1:.85cqh; --s2:1.7cqh; --s3:3.4cqh; --s4:4.6cqh;
+    --gx1:.5cqw; --gx2:1cqw; --gx3:2cqw; --gx4:3.4cqw;
+
+    /* ---- CPS brand, sampled from the site nav ---- */
+    --cps-orange:#F26F21;   /* true brand hex — kept for reference */
+    --cps-green :#2FA37C;   /* true brand hex — kept for reference */
+    --cps-navy  :#062F3B;
+
+    /* functional tokens: same hue family, deepened where the brand hex
+       falls short of WCAG AA against white (checked below in each case) */
+    --win  :#B74B0B;  /* orange, 5.2:1 on white — was 3.0:1 */
+    --win-hover:#8F3A08;
+    --bet  :var(--cps-navy);   /* 14.2:1 — already AA, unchanged */
+    --ok   :#257F60;  /* green, 4.9:1 — for status text/icons */
+    --fillq:#57646A;  /* fill-in quadrant, 6.0:1 — was 2.5:1 */
+    --alert:#A81E37;  /* 7.2:1 — already AA, unchanged */
+
+    /* agentic fit: sequential ramp from CPS green (pale → deep).
+       A value scale, not flat brand colour — read by position, not
+       by meeting AA at each individual step. */
+    --fit1:#DCF0E7; --fit2:#A5DCC7; --fit3:#66C2A2; --fit4:#2FA37C; --fit5:#14614A;
+
+    --ink:#0E2A33;      /* 15.0:1 */
+    --ink-2:#41565E;    /* 7.7:1  */
+    --muted:#4F6973;    /* 5.8:1 — was 3.4:1, real body/caption text */
+    --faint:#5C7985;    /* 4.6:1 — was 2.0:1, de-emphasised data */
+
+    /* three-tier line system: structural > semantic > decorative */
+    --line-strong:#829197;  /* 3.3:1 — axis, header rules, avg divider */
+    --hair:#E6EBED;         /* decorative row/section separators only */
+    --hair-2:#F1F4F5;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;width:100%}
+  body{
+    font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:#fff;
+    -webkit-font-smoothing:antialiased;overflow:hidden;
+  }
+  .stage{width:100vw;height:100vh;container-type:size;display:flex;flex-direction:column}
+  .view{flex:1;min-height:0;display:none;padding:4cqh var(--gx4) 3cqh}
+  .view.on{display:grid}
+
+  /* ---------- shared header ---------- */
+  .topbar{
+    display:grid;grid-template-columns:1fr auto;align-items:end;gap:var(--gx3);
+    padding:4cqh var(--gx4) 0;
+  }
+  .eyebrow-top{
+    font-size:1.15cqh;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--faint);margin-bottom:var(--s1);
+  }
+  .headline{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:3cqh;
+    letter-spacing:-.02em;line-height:1.15;max-width:60cqw;
+  }
+  .headline em{font-style:normal;color:var(--win)}
+  .headline strong{font-weight:600;color:var(--bet)}
+  .subline{font-size:1.42cqh;color:var(--muted);margin-top:var(--s1)}
+
+  .tabs{display:flex;border:1px solid var(--hair);border-radius:10cqh;padding:.3cqh}
+  .tabs button{
+    font:inherit;font-size:1.3cqh;font-weight:500;color:var(--ink-2);
+    background:none;border:0;cursor:pointer;padding:.75cqh var(--gx2);border-radius:10cqh;
+    transition:background .15s,color .15s;white-space:nowrap;
+  }
+  .tabs button:hover{background:var(--hair-2)}
+  .tabs button[aria-selected="true"]{background:var(--win);color:#fff}
+  .tabs button:focus-visible{outline:2px solid var(--win);outline-offset:2px}
+
+  /* ---------- dashboard ---------- */
+  #view-dash{grid-template-rows:auto 1fr;gap:var(--s3)}
+  main{display:grid;grid-template-columns:1.02fr 1fr;gap:var(--gx4);min-height:0}
+
+  .eyebrow{
+    font-size:1.1cqh;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--faint);margin-bottom:var(--s2);display:flex;align-items:baseline;gap:var(--gx2);
+  }
+  .eyebrow span{font-weight:400;letter-spacing:.01em;text-transform:none;color:var(--muted);font-size:1.2cqh}
+
+  .plot{display:grid;grid-template-rows:auto 1fr auto;min-height:0}
+  .chart-box{min-height:0;display:flex}
+  .chart-box svg{width:100%;height:100%;display:block}
+  .grid-line{stroke:#F4F7F7;stroke-width:1}
+  .axis-line{stroke:var(--line-strong);stroke-width:1.5}
+  .thresh{stroke:#A9B4B8;stroke-width:1.25;stroke-dasharray:4 4}
+  .tick{font-family:'Inter';font-size:10px;fill:var(--faint);font-weight:500}
+  .axis-title{font-family:'Inter';font-size:9.5px;font-weight:600;fill:var(--muted);letter-spacing:.15em}
+  .quad-label{font-family:'Inter';font-size:9px;font-weight:600;letter-spacing:.1em}
+  .lbl{font-family:'Inter';font-size:11px;font-weight:600;fill:var(--ink)}
+  .lbl-sub{font-family:'Inter';font-size:9px;font-weight:500;fill:var(--muted);letter-spacing:.01em}
+  .bubble circle{transform-box:fill-box;transform-origin:center;animation:rise .5s cubic-bezier(.22,.7,.3,1) both}
+  .bubble .tex-overlay{mix-blend-mode:overlay;pointer-events:none}
+  @keyframes rise{from{transform:scale(.35);opacity:0}to{transform:scale(1);opacity:1}}
+
+  .legend{
+    display:flex;align-items:center;gap:var(--gx3);flex-wrap:wrap;
+    margin-top:var(--s2);padding-top:var(--s2);border-top:1px solid var(--hair);
+    font-size:1.25cqh;color:var(--muted);
+  }
+  .legend .lg{display:flex;align-items:center;gap:var(--gx2)}
+  .legend .sw{width:1.15cqh;height:1.15cqh;border-radius:50%;display:block}
+  .legend .sw.win{background:
+      radial-gradient(circle at 30% 30%, rgba(255,255,255,.65) 1px, transparent 1.3px) 0 0/32% 32%,
+      var(--fit4)}
+  .legend .sw.bet{background:
+      repeating-linear-gradient(45deg, rgba(255,255,255,.6) 0 14%, transparent 14% 42%),
+      var(--fit4)}
+  .sizes{display:flex;align-items:flex-end;gap:.4cqw}
+  .sizes i{background:#D3DBDD;border-radius:50%;display:block}
+  .sizes .a{width:.8cqh;height:.8cqh}.sizes .b{width:1.4cqh;height:1.4cqh}.sizes .c{width:2cqh;height:2cqh}
+  .ramp{display:flex;border-radius:10cqh;overflow:hidden}
+  .ramp i{width:1.3cqw;height:.9cqh;display:block}
+
+  .tables{display:grid;grid-template-rows:1fr 1fr;gap:var(--s4,4.2cqh);min-height:0}
+  .tblblock{display:flex;flex-direction:column;min-height:0}
+  table{width:100%;border-collapse:collapse;table-layout:fixed;font-variant-numeric:tabular-nums}
+  col.uc{width:44%} col.sc{width:8.4%} col.av{width:14%}
+  thead th{
+    font-size:1.05cqh;font-weight:600;letter-spacing:.02em;color:var(--faint);
+    text-transform:uppercase;text-align:center;padding:0 .2cqw var(--s2);
+    border-bottom:1.5px solid var(--line-strong);white-space:nowrap;overflow:hidden;
+  }
+  thead th.uc{text-align:left}
+  tbody td{
+    text-align:center;font-size:1.6cqh;font-weight:500;color:var(--ink);
+    padding:var(--s1) 0;border-bottom:1px solid var(--hair-2);vertical-align:middle;
+  }
+  tbody tr:last-child td{border-bottom:none}
+  td.uc{text-align:left;padding-right:var(--gx2)}
+  .ucrow{display:flex;align-items:center;gap:var(--gx2)}
+  .rank{
+    flex:none;width:2.2cqh;height:2.2cqh;border-radius:50%;color:#fff;
+    font-family:'Space Grotesk';font-weight:700;font-size:1.25cqh;display:grid;place-items:center;
+  }
+  .ucname{min-width:0}
+  .ucname b{display:block;font-weight:600;font-size:1.4cqh;letter-spacing:-.006em;line-height:1.15;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ucname small{display:block;font-weight:500;font-size:1.02cqh;margin-top:.2cqh;letter-spacing:.015em;color:var(--muted)}
+  td.v3,td.vlow{color:var(--faint);font-weight:400}
+  td.vhigh{color:var(--ink);font-weight:700}
+  td.vbad{color:var(--alert);font-weight:700}
+  td.avg{font-weight:700;color:var(--ink);border-left:1.5px solid var(--line-strong)}
+  thead th.avg{border-left:1.5px solid var(--line-strong);color:var(--ink-2)}
+  tbody tr:hover td{background:#FAFCFC}
+
+  .stamp{display:flex;justify-content:space-between;margin-top:0;padding-top:var(--s2);
+    border-top:1px solid var(--hair);font-size:1cqh;color:var(--faint);letter-spacing:.02em}
+
+  /* ---------- data view ---------- */
+  #view-data{grid-template-rows:auto 1fr;gap:var(--s3);overflow:hidden}
+  .data-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--gx4);min-height:0}
+  .pane{display:flex;flex-direction:column;min-height:0}
+  .pane-hd{display:flex;align-items:center;gap:var(--gx2);margin-bottom:var(--s2)}
+  .pane-hd h2{font-family:'Space Grotesk';font-size:1.7cqh;font-weight:600;letter-spacing:-.01em}
+  .pane-hd p{font-size:1.2cqh;color:var(--muted);margin-left:auto;text-align:right}
+
+  .btn{
+    font:inherit;font-size:1.25cqh;font-weight:600;border-radius:10cqh;cursor:pointer;
+    padding:.85cqh var(--gx3);border:1px solid var(--hair);background:#fff;color:var(--ink-2);
+    transition:background .15s,color .15s,border-color .15s;white-space:nowrap;
+  }
+  .btn:hover{background:var(--hair-2)}
+  .btn.primary{background:var(--win);border-color:var(--win);color:#fff}
+  .btn.primary:hover{background:var(--win-hover);border-color:var(--win-hover)}
+  .btn:focus-visible{outline:2px solid var(--win);outline-offset:2px}
+
+  .code{
+    flex:1;min-height:0;overflow:auto;background:#FAFCFC;border:1px solid var(--hair);
+    border-radius:1.2cqh;padding:var(--s2) var(--gx2);
+    font-family:'IBM Plex Mono',monospace;font-size:1.15cqh;line-height:1.65;
+    color:var(--ink-2);white-space:pre-wrap;
+  }
+  textarea.code{resize:none;width:100%;color:var(--ink);tab-size:2}
+  textarea.code:focus{outline:none;border-color:var(--ok)}
+
+  .actions{display:flex;gap:var(--gx2);margin-top:var(--s2);align-items:center;flex-wrap:wrap}
+  .status{font-size:1.2cqh;margin-left:auto;text-align:right;line-height:1.4;max-width:60%}
+  .status.ok{color:var(--ok)}
+  .status.err{color:var(--alert)}
+  .status ul{list-style:none;margin-top:.3cqh}
+
+  @media (prefers-reduced-motion:reduce){.bubble circle{animation:none}}
+
+  @media (max-aspect-ratio:1/1){
+    body{overflow:auto}
+    .stage{height:auto;min-height:100vh;container-type:normal}
+    :root{--s1:6px;--s2:12px;--s3:24px;--gx2:10px;--gx3:16px;--gx4:20px}
+    .topbar{padding:24px 20px 0;grid-template-columns:1fr}
+    .tabs{margin-top:14px;justify-self:start}
+    .view{padding:24px 20px}
+    .headline{font-size:26px;max-width:none}.subline{font-size:14px}
+    .eyebrow-top,.eyebrow{font-size:10px}.eyebrow span{font-size:12px}
+    main,.data-grid{grid-template-columns:1fr}
+    .chart-box{height:52vh}
+    #view-data{overflow:visible}
+    .code{min-height:280px}
+    .tables{grid-template-rows:auto auto}
+    .tabs button,.btn{font-size:13px;padding:8px 14px}
+    thead th{font-size:9px}tbody td{font-size:14px;padding:8px 0}
+    .rank{width:20px;height:20px;font-size:11px}
+    .ucname b{font-size:13px}.ucname small{font-size:10px}
+    .legend{font-size:12px}.stamp{font-size:10px;flex-direction:column;gap:4px}
+    .pane-hd h2{font-size:16px}.pane-hd p,.status{font-size:12px}.code{font-size:12px}
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <div class="topbar">
+    <div>
+      <div class="eyebrow-top">Use case portfolio matrix &middot; impact vs complexity</div>
+      <h1 class="headline" id="headline"></h1>
+      <div class="subline" id="subline"></div>
+    </div>
+    <div class="tabs" role="tablist" aria-label="View">
+      <button role="tab" id="tab-dash" aria-controls="view-dash" aria-selected="true">Dashboard</button>
+      <button role="tab" id="tab-data" aria-controls="view-data" aria-selected="false">Data</button>
+    </div>
+  </div>
+
+  <!-- ================= DASHBOARD ================= -->
+  <section class="view on" id="view-dash" role="tabpanel" aria-labelledby="tab-dash">
+    <div></div>
+    <main>
+      <div class="plot">
+        <div class="eyebrow">Portfolio plot <span>numbered by priority</span></div>
+        <div class="chart-box">
+          <svg id="chart" viewBox="0 0 660 520" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="ct"><title id="ct">Use cases plotted by impact against complexity</title></svg>
+        </div>
+        <div class="legend">
+          <span class="lg"><span class="sw win"></span> Quick win</span>
+          <span class="lg"><span class="sw bet"></span> Big bet</span>
+          <span class="lg" id="lgReach"><span class="sizes"><i class="a"></i><i class="b"></i><i class="c"></i></span> Reach</span>
+          <span class="lg"><span class="ramp" id="ramp"></span> Agentic fit 1&ndash;5</span>
+        </div>
+      </div>
+
+      <div class="tables">
+        <div class="tblblock">
+          <div class="eyebrow">Impact <span>higher is better</span></div>
+          <table id="impact"></table>
+        </div>
+        <div class="tblblock">
+          <div class="eyebrow">Complexity <span>higher is harder</span></div>
+          <table id="complexity"></table>
+        </div>
+      </div>
+    </main>
+
+    <div class="stamp">
+      <span id="stampL"></span>
+      <span>Priority = impact &divide; complexity &middot; both scored 1&ndash;5</span>
+    </div>
+  </section>
+
+  <!-- ================= DATA ================= -->
+  <section class="view" id="view-data" role="tabpanel" aria-labelledby="tab-data">
+    <div></div>
+    <div class="data-grid">
+
+      <div class="pane">
+        <div class="pane-hd">
+          <h2>1. Generate the JSON</h2>
+          <p>Paste this into Claude with your use cases</p>
+        </div>
+        <div class="code" id="promptBox"></div>
+        <div class="actions">
+          <button class="btn" id="copyPrompt">Copy prompt</button>
+          <span class="status" id="promptStatus"></span>
+        </div>
+      </div>
+
+      <div class="pane">
+        <div class="pane-hd">
+          <h2>2. Paste it back</h2>
+          <p>Replaces the dashboard. Nothing is uploaded.</p>
+        </div>
+        <textarea class="code" id="jsonBox" spellcheck="false" aria-label="Use case JSON"></textarea>
+        <div class="actions">
+          <button class="btn primary" id="loadBtn">Load dashboard</button>
+          <button class="btn" id="sampleBtn">Reset to sample</button>
+          <button class="btn" id="linkBtn">Copy shareable link</button>
+          <span class="status" id="jsonStatus"></span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<!-- prompt stored as plain text so quotes and braces need no escaping -->
+<script type="text/plain" id="promptTpl">You are scoring AI use cases for a portfolio matrix. Output ONLY a JSON array — no prose, no markdown fences.
+
+Each element:
+{
+  "name": "Full name of the use case",
+  "short": "Two or three words, for the chart label",
+  "sub": "Optional one-line qualifier, or omit",
+  "fit": 1-5,
+  "reach": 0-100,
+  "impact": [security, speed, quality, scale, roi],
+  "complexity": [data, security, human, docs, governance]
+}
+
+Scoring rules — every score is an integer 1 to 5:
+
+IMPACT (higher is better)
+1. Security & compliance — how much it reduces regulatory, audit or data-protection risk
+2. Speed & agility — how much faster the work gets done
+3. Quality & consistency — how much variance in output it removes
+4. Scalability & reach — how many people or cases it touches
+5. Cost savings & ROI — cashable and non-cashable return
+
+Be discriminating on impact. If every use case scores 4s and 5s, the matrix is useless. Use the full range, and be willing to give a 2.
+
+COMPLEXITY (higher is harder)
+1. Data & integrations — number and awkwardness of systems to connect
+2. Security & PII — sensitivity of the data involved
+3. Human in the loop — how much human review the workflow demands
+4. Document quality — how messy or unstructured the source content is
+5. Approvals & governance — sign-off burden before it can ship
+
+Before scoring, place each use case in ONE of these five complexity tiers. The
+tier sets a target range for the AVERAGE of the five scores above — stay
+inside it, but still vary the five criteria individually, since a use case is
+rarely equally hard on every axis.
+
+  TIER          AVG RANGE   WHAT PUTS A USE CASE HERE
+  Turnkey       1.0–1.8     One system, already-cleared or public data, no real sign-off
+  Guided        1.8–2.6     One or two systems, light human review, routine approval
+  Coordinated   2.6–3.4     Several systems, regular human-in-the-loop, a named approver
+  Entangled     3.4–4.2     Sensitive data, heavy review, more than one sign-off
+  Frontier      4.2–5.0     Many fragile systems, high-sensitivity data, governance-heavy,
+                            messy or unstructured source content
+
+Across the whole list, use the full spread of tiers. A realistic portfolio is
+not five "Frontier" use cases — if everything you produce lands in the same
+tier, go back and widen it.
+
+OTHER FIELDS
+- "fit" (1-5): agentic fit. How well the problem suits an autonomous agent versus a simple form, report or rules engine. 5 = genuinely agentic (multi-step reasoning over open-ended input); 1 = a script would do.
+- "reach" (0-100): rough size of the affected population as a percentage of the organisation. If you cannot estimate this honestly, omit the field entirely for every use case — the dashboard will drop the bubble-size encoding rather than show a meaningless one.
+
+My use cases:
+<<< PASTE YOUR USE CASES HERE — a name and a sentence or two each is enough >>>
+</script>
+
+<script>
+/* =========================================================
+   Sample data. Replace via the Data tab, or edit here.
+   ========================================================= */
+const SAMPLE = [
+  {name:'Customer & Stakeholder Engagement',short:'Customer engagement',fit:4,reach:60,impact:[3,4,4,5,4],complexity:[4,3,2,1,3]},
+  {name:'HR & People Knowledge Agent',      short:'HR knowledge',       fit:3,reach:85,impact:[3,4,4,5,3],complexity:[3,4,2,2,4]},
+  {name:'DLS Service Copilot',              short:'DLS Service',        fit:4,reach:55,impact:[2,5,4,3,4],complexity:[4,3,3,4,3]},
+  {name:'Retail Banking AI Chatbot',        short:'Retail Banking',     sub:'Online & mobile banking',fit:3,reach:72,impact:[5,4,4,5,5],complexity:[5,5,2,2,4]},
+  {name:'Commercial Service Agent',         short:'Commercial Service', fit:5,reach:70,impact:[3,5,4,5,4],complexity:[5,4,4,2,4]},
+];
+
+const IMPACT_CRIT=[
+  {k:'Security',full:'Security & compliance'},{k:'Speed',full:'Speed & agility'},
+  {k:'Quality',full:'Quality & consistency'},{k:'Scale',full:'Scalability & reach'},
+  {k:'ROI',full:'Cost savings & ROI'}];
+const CPLX_CRIT=[
+  {k:'Data',full:'Data & integrations'},{k:'Security',full:'Security & PII'},
+  {k:'Human',full:'Human in the loop'},{k:'Docs',full:'Document quality'},
+  {k:'Gov.',full:'Approvals & governance'}];
+
+const T_IMPACT=3.0, T_CPLX=3.5;
+const FITHEX=['','#DCF0E7','#A5DCC7','#66C2A2','#2FA37C','#14614A'];
+const QUAD={
+  win :{label:'Quick win', colour:'#B74B0B', pattern:'pat-dots'},   /* AA orange */
+  bet :{label:'Big bet',   colour:'#062F3B', pattern:'pat-lines'},  /* CPS navy */
+  fill:{label:'Fill-in',   colour:'#57646A', pattern:null},
+  pit :{label:'Money pit', colour:'#A81E37', pattern:null},
+};
+
+let CASES = SAMPLE.map(c=>({...c}));
+let SHOW_REACH = true;   /* derived: true only when every case has a reach */
+
+/* ---------- validation ---------- */
+function validate(raw){
+  const errs=[];
+  let data;
+  try{ data=JSON.parse(raw); }
+  catch(e){ return {errs:['Not valid JSON: '+e.message]}; }
+  if(!Array.isArray(data)) return {errs:['Top level must be an array of use cases.']};
+  if(!data.length)         return {errs:['The array is empty.']};
+  if(data.length>12)       errs.push('More than 12 use cases — the plot will get crowded.');
+
+  const int15=v=>Number.isInteger(v)&&v>=1&&v<=5;
+  const clean=data.map((c,i)=>{
+    const at=`Use case ${i+1}${c&&c.name?` (${c.name})`:''}`;
+    if(typeof c!=='object'||c===null){errs.push(`${at}: not an object.`);return null;}
+    if(!c.name) errs.push(`${at}: missing "name".`);
+    if(!Array.isArray(c.impact)||c.impact.length!==5||!c.impact.every(int15))
+      errs.push(`${at}: "impact" must be 5 integers, 1–5.`);
+    if(!Array.isArray(c.complexity)||c.complexity.length!==5||!c.complexity.every(int15))
+      errs.push(`${at}: "complexity" must be 5 integers, 1–5.`);
+    if(!int15(c.fit)) errs.push(`${at}: "fit" must be an integer 1–5.`);
+    if(c.reach!==undefined && !(typeof c.reach==='number'&&c.reach>=0&&c.reach<=100))
+      errs.push(`${at}: "reach" must be a number 0–100, or omitted.`);
+    return {
+      name:String(c.name||''),
+      short:String(c.short||c.name||'').slice(0,26),
+      sub:c.sub?String(c.sub):undefined,
+      fit:c.fit, reach:c.reach,
+      impact:c.impact, complexity:c.complexity,
+    };
+  });
+  if(errs.length) return {errs};
+  return {cases:clean, errs:[]};
+}
+
+/* ---------- derive ---------- */
+const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;
+function compute(){
+  SHOW_REACH = CASES.every(c=>typeof c.reach==='number');
+  CASES.forEach(c=>{
+    c.iAvg=mean(c.impact);
+    c.cAvg=mean(c.complexity);
+    c.pri=c.iAvg/c.cAvg;
+    const hi=c.iAvg>=T_IMPACT, roomy=c.cAvg<T_CPLX;
+    c.quad = hi ? (roomy?'win':'bet') : (roomy?'fill':'pit');
+    const mx=Math.max(...c.complexity);
+    c.hard=CPLX_CRIT[c.complexity.indexOf(mx)].full; c.hardVal=mx;
+    const mn=Math.min(...c.complexity);
+    c.easy=CPLX_CRIT[c.complexity.indexOf(mn)].full; c.easyVal=mn;
+  });
+
+  /* Only the single hardest and single easiest case across the whole
+     portfolio get tagged — everyone else's complexity row stays quiet. */
+  CASES.forEach(c=>c.complexityTag=null);
+  if(CASES.length>1){
+    const hardestCase = CASES.reduce((a,b)=>b.cAvg>a.cAvg?b:a);
+    const easiestCase  = CASES.reduce((a,b)=>b.cAvg<a.cAvg?b:a);
+    if(hardestCase.cAvg!==easiestCase.cAvg){
+      hardestCase.complexityTag='hardest';
+      easiestCase.complexityTag='easiest';
+    }
+  }
+
+  const ranked=[...CASES].sort((a,b)=>b.pri-a.pri);
+  ranked.forEach((c,i)=>c.rank=i+1);
+  return ranked;
+}
+
+/* ---------- chart ---------- */
+const NS='http://www.w3.org/2000/svg';
+const el=(n,a={})=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;};
+const W=660,H=520,M={l:40,r:186,t:22,b:50};
+const D0=1,D1=5;
+const pw=W-M.l-M.r, ph=H-M.t-M.b;
+const X=v=>M.l+((v-D0)/(D1-D0))*pw;
+const Y=v=>M.t+(1-(v-D0)/(D1-D0))*ph;
+const R=c=> SHOW_REACH ? 24*Math.sqrt(c.reach/100) : 17;
+
+/* Two textures, blended onto the fit-coloured fill itself —
+   dots for quick win, diagonal lines for big bet. mix-blend-mode
+   keeps them legible whether the ball underneath is pale or deep. */
+const PATTERN_DEFS = `
+  <pattern id="pat-dots" width="5" height="5" patternUnits="userSpaceOnUse">
+    <circle cx="1.4" cy="1.4" r="1" fill="#0E2A33"/>
+  </pattern>
+  <pattern id="pat-lines" width="5.5" height="5.5" patternUnits="userSpaceOnUse"
+           patternTransform="rotate(45)">
+    <rect width="5.5" height="2.5" fill="#0E2A33"/>
+  </pattern>`;
+
+function drawChart(){
+  const svg=document.getElementById('chart');
+  svg.innerHTML='<title id="ct">Use cases plotted by impact against complexity</title>'
+    +'<defs>'+PATTERN_DEFS+'</defs>';
+  const pr=X(D1), pb=Y(D0);
+
+  for(let v=D0;v<=D1;v++){
+    svg.appendChild(el('line',{x1:X(v),y1:M.t,x2:X(v),y2:pb,class:'grid-line'}));
+    svg.appendChild(el('line',{x1:M.l,y1:Y(v),x2:pr,y2:Y(v),class:'grid-line'}));
+    const tx=el('text',{x:X(v),y:pb+15,'text-anchor':'middle',class:'tick'});tx.textContent=v;svg.appendChild(tx);
+    const ty=el('text',{x:M.l-8,y:Y(v)+3.5,'text-anchor':'end',class:'tick'});ty.textContent=v;svg.appendChild(ty);
+  }
+  svg.appendChild(el('line',{x1:M.l,y1:M.t,x2:M.l,y2:pb,class:'axis-line'}));
+  svg.appendChild(el('line',{x1:M.l,y1:pb,x2:pr,y2:pb,class:'axis-line'}));
+  svg.appendChild(el('line',{x1:X(T_CPLX),y1:M.t,x2:X(T_CPLX),y2:pb,class:'thresh'}));
+  svg.appendChild(el('line',{x1:M.l,y1:Y(T_IMPACT),x2:pr,y2:Y(T_IMPACT),class:'thresh'}));
+
+  const ql=(x,y,t,a,f)=>{const e=el('text',{x,y,'text-anchor':a,class:'quad-label',fill:f});e.textContent=t;svg.appendChild(e)};
+  ql(M.l+7,M.t+12,'QUICK WINS','start',QUAD.win.colour);
+  ql(pr-5, M.t+12,'BIG BETS','end',    QUAD.bet.colour);
+  ql(M.l+7,pb-7,  'FILL-INS','start',  QUAD.fill.colour);
+  ql(pr-5, pb-7,  'MONEY PITS','end',  QUAD.pit.colour);
+
+  const xt=el('text',{x:M.l+pw/2,y:H-8,'text-anchor':'middle',class:'axis-title'});xt.textContent='COMPLEXITY';svg.appendChild(xt);
+  const gy=el('g',{transform:`translate(12,${M.t+ph/2}) rotate(-90)`});
+  const yt=el('text',{x:0,y:0,'text-anchor':'middle',class:'axis-title'});yt.textContent='IMPACT';gy.appendChild(yt);svg.appendChild(gy);
+
+  const nodes=CASES.map(c=>({c,x:X(c.cAvg),y:Y(c.iAvg),ox:X(c.cAvg),oy:Y(c.iAvg),r:R(c)}));
+  for(let p=0;p<140;p++){
+    for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
+      const a=nodes[i],b=nodes[j];
+      let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||.01;
+      const min=a.r+b.r+7;
+      if(d<min){const k=(min-d)/d*.5;dx*=k;dy*=k;a.x-=dx;a.y-=dy;b.x+=dx;b.y+=dy;}
+    }
+    nodes.forEach(n=>{n.x+=(n.ox-n.x)*.06;n.y+=(n.oy-n.y)*.06;});
+  }
+
+  const LX=pr+26;
+  const labels=nodes.map(n=>({n,ly:n.y}));
+  labels.sort((a,b)=>a.ly-b.ly);
+  const GAP = Math.min(30, (ph-24)/Math.max(labels.length,1));
+  for(let p=0;p<80;p++){
+    for(let i=1;i<labels.length;i++){
+      const g=labels[i].ly-labels[i-1].ly;
+      if(g<GAP){const push=(GAP-g)/2;labels[i-1].ly-=push;labels[i].ly+=push;}
+    }
+    labels.forEach(l=>l.ly=Math.max(M.t+12,Math.min(pb-16,l.ly)));
+  }
+
+  labels.forEach(l=>{
+    const n=l.n,sx=n.x+n.r+3,sy=n.y,mx=(sx+LX-8)/2;
+    svg.appendChild(el('path',{d:`M${sx},${sy} C${mx},${sy} ${mx},${l.ly-4} ${LX-8},${l.ly-4}`,
+      fill:'none',stroke:'#E2E7E9','stroke-width':'1'}));
+  });
+
+  [...nodes].sort((a,b)=>b.r-a.r).forEach(n=>{
+    const g=el('g',{class:'bubble'});
+    const q=QUAD[n.c.quad];
+    const ci=el('circle',{cx:n.x,cy:n.y,r:n.r,fill:FITHEX[n.c.fit],'fill-opacity':'.95',
+      stroke:(n.c.fit<=2?'#8FCDB4':'#fff'),'stroke-width':'2'});
+    ci.style.animationDelay=(n.c.rank*0.06)+'s';
+    g.appendChild(ci);
+    if(q.pattern){
+      const tex=el('circle',{cx:n.x,cy:n.y,r:n.r,fill:`url(#${q.pattern})`,
+        'fill-opacity':'.4',class:'tex-overlay'});
+      tex.style.animationDelay=(n.c.rank*0.06)+'s';
+      g.appendChild(tex);
+    }
+    const ti=el('title');
+    ti.textContent=`${n.c.name} — ${q.label}. Impact ${n.c.iAvg.toFixed(1)}, complexity ${n.c.cAvg.toFixed(1)}, fit ${n.c.fit}${SHOW_REACH?`, reach ${n.c.reach}`:''}`;
+    g.appendChild(ti);
+    svg.appendChild(g);
+  });
+
+  labels.forEach(l=>{
+    const c=l.n.c,q=QUAD[c.quad];
+    const t=el('text',{x:LX,y:l.ly-4,class:'lbl'});
+    const nm=el('tspan',{fill:q.colour});nm.textContent=c.rank+'  ';
+    t.appendChild(nm);t.appendChild(document.createTextNode(c.short));
+    svg.appendChild(t);
+    const s=el('text',{x:LX,y:l.ly+9,class:'lbl-sub'});
+    s.textContent=`${q.label} · fit ${c.fit}${SHOW_REACH?` · reach ${c.reach}`:''}`;
+    svg.appendChild(s);
+  });
+}
+
+/* ---------- tables ---------- */
+const cls=(v,inv)=> v===3?'v3' : (inv ? (v>=5?'vbad':(v<=2?'vlow':'')) : (v>=5?'vhigh':(v<=2?'vlow':'')));
+const esc=s=>String(s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+
+function drawTable(id,crit,key,avgKey,ranked,inv,hardCol){
+  let h='<colgroup><col class="uc">'+crit.map(()=>'<col class="sc">').join('')+'<col class="av"></colgroup>';
+  h+='<thead><tr><th class="uc">Use case</th>';
+  crit.forEach(c=>h+=`<th title="${esc(c.full)}">${esc(c.k)}</th>`);
+  h+='<th class="avg">Avg</th></tr></thead><tbody>';
+  ranked.forEach(c=>{
+    const q=QUAD[c.quad];
+    let meta='';
+    if(hardCol){
+      if(c.complexityTag==='hardest')
+        meta=`<small style="color:var(--muted)">Hardest overall</small>`;
+      else if(c.complexityTag==='easiest')
+        meta=`<small style="color:var(--muted)">Easiest overall</small>`;
+    } else if(c.quad==='win'||c.quad==='bet'){
+      meta=`<small style="color:var(--muted)">${q.label}${c.sub?' · '+esc(c.sub):''}</small>`;
+    }
+    h+=`<tr><td class="uc"><span class="ucrow">`+
+       `<span class="rank" style="background:${FITHEX[c.fit]};color:${c.fit>=5?'#fff':'var(--ink)'}">${c.rank}</span>`+
+       `<span class="ucname"><b title="${esc(c.name)}">${esc(c.name)}</b>${meta}</span></span></td>`;
+    c[key].forEach(v=>h+=`<td class="${cls(v,inv)}">${v}</td>`);
+    h+=`<td class="avg">${c[avgKey].toFixed(1)}</td></tr>`;
+  });
+  document.getElementById(id).innerHTML=h+'</tbody>';
+}
+
+/* ---------- headline ---------- */
+function drawHeadline(ranked){
+  const wins=ranked.filter(c=>c.quad==='win'), bets=ranked.filter(c=>c.quad==='bet');
+  const parked=ranked.filter(c=>c.quad==='fill'||c.quad==='pit');
+  const top=wins[0]||ranked[0], bet=bets[0];
+  document.getElementById('headline').innerHTML =
+    (wins.length
+      ? `Start with <em>${esc(top.short)}</em>`+(wins.length>1?` and <em>${esc(wins[1].short)}</em>`:'')
+      : `No quick wins — <em>${esc(top.short)}</em> ranks highest`)+
+    (bet?`. <strong>${esc(bet.short)}</strong> is the big bet.`:'.');
+  const bits=[
+    `${wins.length} quick win${wins.length===1?'':'s'}`,
+    `${bets.length} big bet${bets.length===1?'':'s'}`,
+    parked.length?`${parked.length} parked`:'nothing to kill',
+  ];
+  document.getElementById('subline').textContent =
+    bits.join(', ')+`. ${ranked.length} use case${ranked.length===1?'':'s'} scored.`;
+}
+
+function render(){
+  const ranked=compute();
+  drawHeadline(ranked);
+  drawChart();
+  drawTable('impact',IMPACT_CRIT,'impact','iAvg',ranked,false,false);
+  drawTable('complexity',CPLX_CRIT,'complexity','cAvg',ranked,true,true);
+  document.getElementById('lgReach').style.display = SHOW_REACH ? '' : 'none';
+}
+
+/* ---------- tabs ---------- */
+const tabs={ 'tab-dash':'view-dash', 'tab-data':'view-data' };
+Object.keys(tabs).forEach(id=>{
+  document.getElementById(id).addEventListener('click',()=>{
+    Object.entries(tabs).forEach(([t,v])=>{
+      const on = t===id;
+      document.getElementById(t).setAttribute('aria-selected',on);
+      document.getElementById(v).classList.toggle('on',on);
+    });
+  });
+});
+
+/* ---------- data tab ---------- */
+const promptText = document.getElementById('promptTpl').textContent.trim();
+document.getElementById('promptBox').textContent = promptText;
+
+const jsonBox = document.getElementById('jsonBox');
+const jsonStatus = document.getElementById('jsonStatus');
+
+const serialise = arr => JSON.stringify(
+  arr.map(({name,short,sub,fit,reach,impact,complexity})=>{
+    const o={name,short,fit,impact,complexity};
+    if(sub) o.sub=sub;
+    if(typeof reach==='number') o.reach=reach;
+    return o;
+  }), null, 2);
+
+function setStatus(node,msg,kind){
+  node.className='status'+(kind?' '+kind:'');
+  node.innerHTML=msg;
+  if(kind==='ok') setTimeout(()=>{node.innerHTML='';node.className='status';},2600);
+}
+
+async function copy(text,node,label){
+  try{ await navigator.clipboard.writeText(text); setStatus(node,label+' copied.','ok'); }
+  catch{ setStatus(node,'Clipboard blocked — select and copy manually.','err'); }
+}
+
+document.getElementById('copyPrompt').addEventListener('click',()=>
+  copy(promptText, document.getElementById('promptStatus'), 'Prompt'));
+
+document.getElementById('loadBtn').addEventListener('click',()=>{
+  const {cases,errs}=validate(jsonBox.value);
+  if(errs.length){
+    setStatus(jsonStatus,'<ul>'+errs.slice(0,4).map(e=>'<li>'+esc(e)+'</li>').join('')+
+      (errs.length>4?`<li>…and ${errs.length-4} more</li>`:'')+'</ul>','err');
+    return;
+  }
+  CASES=cases; render();
+  setStatus(jsonStatus,`Loaded ${cases.length} use cases.`,'ok');
+  document.getElementById('tab-dash').click();
+});
+
+document.getElementById('sampleBtn').addEventListener('click',()=>{
+  CASES=SAMPLE.map(c=>({...c}));
+  jsonBox.value=serialise(CASES);
+  render();
+  setStatus(jsonStatus,'Sample restored.','ok');
+});
+
+document.getElementById('linkBtn').addEventListener('click',()=>{
+  const {cases,errs}=validate(jsonBox.value);
+  if(errs.length){ setStatus(jsonStatus,'Fix the JSON before sharing.','err'); return; }
+  const packed=btoa(unescape(encodeURIComponent(JSON.stringify(cases))));
+  const url=location.origin+location.pathname+'#d='+packed;
+  copy(url,jsonStatus,'Link');
+});
+
+/* ---------- boot: read #d= if present ---------- */
+(function boot(){
+  const m=location.hash.match(/^#d=(.+)$/);
+  if(m){
+    try{
+      const raw=decodeURIComponent(escape(atob(m[1])));
+      const {cases,errs}=validate(raw);
+      if(!errs.length) CASES=cases;
+    }catch{/* fall through to sample */}
+  }
+  jsonBox.value=serialise(CASES);
+  document.getElementById('ramp').innerHTML=[1,2,3,4,5].map(i=>`<i style="background:${FITHEX[i]}"></i>`).join('');
+  const d=new Date();
+  document.getElementById('stampL').textContent=
+    `Last reviewed ${d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})} · scored by delivery + business stakeholders`;
+  render();
+})();
+</script>
+</body>
+</html>
